@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrasi Hotspot - Robotic Cyberpunk Network</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; }
+        
+        body {
+            background-color: #020408;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(2, 4, 8, 0.85), rgba(2, 4, 8, 0.95)), 
+                url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1920&auto=format&fit=crop');
+            background-size: 30px 30px, 30px 30px, cover, cover;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Efek cahaya aura sirkuit robotik/cyan */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 65%);
+        }
+
+        .container {
+            background: #080d16;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid #00f0ff;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 240, 255, 0.25), inset 0 0 15px rgba(0, 240, 255, 0.08);
+            padding: 40px 35px;
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Badge ornamen Robotic di bagian atas */
+        .container::before {
+            content: 'SYS // REGISTRATION';
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #00f0ff 0%, #0077ff 100%);
+            color: #020408;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 4px 16px;
+            border-radius: 20px;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { 
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff; 
+            font-size: 20px; 
+            margin-bottom: 6px; 
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+        .header p { color: #64748b; font-size: 13.5px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; color: #e2e8f0; font-weight: 500; font-size: 13.5px; }
+        .form-group input {
+            width: 100%; 
+            padding: 12px 16px; 
+            background: #020408;
+            border: 1px solid #1b2a4a; 
+            border-radius: 8px; 
+            color: #ffffff;
+            font-size: 14px; 
+            transition: all 0.3s ease;
+        }
+        .form-group input::placeholder { color: #475569; }
+        .form-group input:focus { 
+            outline: none; 
+            border-color: #00f0ff; 
+            background: #020408;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); 
+        }
+
+        .btn {
+            width: 100%; 
+            padding: 14px; 
+            background: linear-gradient(135deg, #00f0ff 0%, #0077ff 100%);
+            color: #020408; 
+            border: 1px solid #00f0ff; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            font-weight: 900; 
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+            margin-top: 6px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 240, 255, 0.5); opacity: 0.95; }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { background: #1b2a4a; border-color: #27354f; cursor: not-allowed; transform: none; box-shadow: none; color: #64748b; }
+
+        .message { padding: 12px; border-radius: 8px; margin-top: 16px; display: none; font-size: 13.5px; text-align: center; font-weight: 500; }
+        .message.success { background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.4); }
+        .message.error { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+        .login-link { text-align: center; margin-top: 20px; color: #64748b; font-size: 13.5px; }
+        .login-link a { color: #00f0ff; text-decoration: none; font-weight: 600; transition: color 0.2s; }
+        .login-link a:hover { color: #ffffff; text-decoration: underline; }
+
+        .loading {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(2, 4, 8, 0.3); border-radius: 50%; border-top-color: #020408;
+            animation: spin 1s ease-in-out infinite; margin-right: 8px; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ SYS // REGISTRATION</h1>
+            <p>Inisialisasi akses jaringan cyber-link tingkat tinggi</p>
+        </div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="name">Nama Lengkap</label>
+                <input type="text" id="name" name="name" required placeholder="Masukkan nama lengkap">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="Masukkan email">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Nomor Telepon</label>
+                <input type="tel" id="phone" name="phone" required placeholder="Masukkan nomor telepon">
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required placeholder="Masukkan username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Masukkan password">
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Konfirmasi Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Konfirmasi password">
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                <span id="btnText">Daftar Sekarang</span>
+            </button>
+        </form>
+
+        <div class="message" id="message"></div>
+
+        <div class="login-link">
+            Sudah punya akun? <a href="login.html">Login di sini</a>
+        </div>
+    </div>
+
+    <script>
+        // ========================================================
+        // GANTI URL DI BAWAH DENGAN DOMAIN VERCEL KAMU JIKA SUDAH DEPLOY
+        // Contoh: 'https://nama-proyek-kamu.vercel.app'
+        // ========================================================
+        const BACKEND_URL = window.location.origin.includes('vercel.app') 
+            ? window.location.origin 
+            : 'https://mikrotik-hostpot-login-done.vercel.app'; // <--- Masukkan domain Vercel di sini
+
+        const form = document.getElementById('registerForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const message = document.getElementById('message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showMessage('Password tidak cocok!', 'error');
+                return;
+            }
+
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                username: document.getElementById('username').value,
+                password: password
+            };
+
+            // Show loading
+            submitBtn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> Memproses...';
+
+            try {
+                // Menembak langsung ke API Vercel Serverless
+                const response = await fetch(`${BACKEND_URL}/api/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(data.message + ' Mengalihkan ke halaman login...', 'success');
+                    form.reset();
+
+                    // Redirect otomatis ke login.html setelah 2 detik
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Terjadi kesalahan koneksi ke server backend.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                btnText.textContent = 'Daftar Sekarang';
+            }
+        });
+
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.style.display = 'block';
+
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotspot Login - Robotic Cyberpunk Network</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; }
+        
+        body {
+            background-color: #020408;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(2, 4, 8, 0.85), rgba(2, 4, 8, 0.95)),
+                url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1920&auto=format&fit=crop');
+            background-size: 30px 30px, 30px 30px, cover, cover;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            background: #080d16;
+            border: 2px solid #00f0ff;
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 240, 255, 0.25), inset 0 0 15px rgba(0, 240, 255, 0.08);
+            padding: 40px;
+            max-width: 450px;
+            width: 100%;
+            backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Aksen garis neon di atas card */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #00f0ff, #0077ff, #00f0ff);
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        
+        .header h1 { 
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff; 
+            font-size: 22px; 
+            font-weight: 900; 
+            margin-bottom: 8px; 
+            letter-spacing: 0.08em; 
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.6); 
+        }
+        
+        .header p { 
+            color: #64748b; 
+            font-size: 12px; 
+            font-weight: 600;
+            text-transform: uppercase; 
+            letter-spacing: 0.15em; 
+        }
+        
+        /* Icon Core / Neural Link */
+        .racing-icon {
+            width: 75px; height: 75px; margin: 0 auto 20px;
+            background: linear-gradient(135deg, #00f0ff 0%, #0077ff 100%);
+            border: 1px solid #00f0ff;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 32px;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+        }
+
+        .form-group { margin-bottom: 20px; }
+        
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: #94a3b8; 
+            font-weight: 600; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+        }
+        
+        .form-group input {
+            width: 100%; padding: 14px 16px; background: #020408; border: 1px solid #1b2a4a;
+            border-radius: 8px; font-size: 15px; color: #ffffff; outline: none; transition: all 0.2s ease;
+        }
+        
+        .form-group input:focus { 
+            border-color: #00f0ff; 
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); 
+        }
+
+        .btn {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #00f0ff 0%, #0077ff 100%);
+            color: #020408; border: 1px solid #00f0ff; border-radius: 8px; font-size: 15px; font-weight: 900; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.1em; font-family: 'Orbitron', sans-serif;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        }
+        
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 240, 255, 0.6); }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { background: #1b2a4a; border-color: #27354f; color: #64748b; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .message { padding: 14px 18px; border-radius: 8px; margin-top: 20px; display: none; font-size: 14px; font-weight: 500; }
+        .message.success { background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); }
+        .message.error { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .message.info { background: rgba(0, 119, 255, 0.15); color: #60a5fa; border: 1px solid rgba(0, 119, 255, 0.3); }
+        
+        .register-link { text-align: center; margin-top: 24px; color: #64748b; font-size: 13px; }
+        .register-link a { color: #00f0ff; text-decoration: none; font-weight: 600; }
+        .register-link a:hover { text-decoration: underline; }
+        
+        .loading {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(2, 4, 8, 0.3); border-radius: 50%; border-top-color: #020408;
+            animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .status-check { margin-top: 20px; padding: 20px; background: #020408; border: 1px solid #00f0ff; border-radius: 10px; display: none; }
+        .status-check.show { display: block; }
+        .status-check input { width: 68%; padding: 12px 14px; background: #080d16; border: 1px solid #1b2a4a; border-radius: 6px; color: #ffffff; margin-right: 8px; outline: none; }
+        .status-check input:focus { border-color: #00f0ff; }
+        .status-check button { padding: 12px 16px; background: #00f0ff; color: #020408; border: none; border-radius: 6px; cursor: pointer; font-weight: 900; font-size: 13px; transition: background 0.2s; }
+        .status-check button:hover { background: #0077ff; color: #fff; }
+        
+        .status-result { margin-top: 12px; padding: 12px; border-radius: 6px; font-size: 13px; font-weight: 500; display: none; }
+        .status-result.approved { background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); }
+        .status-result.pending { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .status-result.rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .status-result.not-found { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="racing-icon">⚡</div>
+            <h1>NEURAL // HOTSPOT</h1>
+            <p>High-Speed Cyber Telemetry Network</p>
+        </div>
+
+        <!-- FORM LOGIN BACKEND + MIKROTIK INTEGRATION -->
+        <form id="loginForm" name="login" action="$(link-login-only)" method="post">
+            <input type="hidden" name="dst" value="$(link-orig)">
+            <input type="hidden" name="popup" value="true">
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="" required placeholder="Masukkan username driver">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Masukkan password">
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                <span id="btnText">MASUK</span>
+            </button>
+        </form>
+
+        <div class="message" id="message"></div>
+
+        <div class="status-check" id="statusCheck">
+            <p style="margin-bottom: 12px; color: #00f0ff; font-size: 12px; font-weight: 700; text-transform: uppercase;">Cek Telemetri Registrasi:</p>
+            <div style="display: flex;">
+                <input type="text" id="checkUsername" placeholder="Username Driver">
+                <button type="button" onclick="checkStatus()">Cek</button>
+            </div>
+            <div class="status-result" id="statusResult"></div>
+        </div>
+
+        <div class="register-link">
+            Belum punya akun? <a href="register.html">Registrasi</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button type="button" onclick="toggleStatusCheck()" style="background: none; border: none; color: #00f0ff; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: underline;">
+                Cek status registrasi 
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = window.location.origin.includes('vercel.app') 
+            ? window.location.origin 
+            : 'https://mikrotik-hostpot-login-done.vercel.app';
+
+        const form = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const message = document.getElementById('message');
+        const statusCheck = document.getElementById('statusCheck');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const usernameVal = document.getElementById('username').value;
+            const passwordVal = document.getElementById('password').value;
+
+            const formData = {
+                username: usernameVal,
+                password: passwordVal
+            };
+
+            submitBtn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> Connecting Telemetry...';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`System initialized, Driver ${data.user.name}! Login berhasil.`, 'success');
+                    
+                    setTimeout(() => {
+                        showMessage('Masuk ke jalur utama...', 'info');
+                        HTMLFormElement.prototype.submit.call(form);
+                    }, 1500);
+                } else {
+                    showMessage(data.message, 'error');
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'MASUK';
+                }
+            } catch (error) {
+                showMessage('Backend offline, mencoba langsung koneksi MikroTik...', 'info');
+                setTimeout(() => {
+                    HTMLFormElement.prototype.submit.call(form);
+                }, 1000);
+            }
+        });
+
+        function toggleStatusCheck() {
+            statusCheck.classList.toggle('show');
+        }
+
+        async function checkStatus() {
+            const username = document.getElementById('checkUsername').value;
+            const statusResult = document.getElementById('statusResult');
+
+            if (!username) {
+                statusResult.textContent = 'Masukkan username driver terlebih dahulu';
+                statusResult.className = 'status-result not-found';
+                statusResult.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/status/${username}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    statusResult.textContent = `Status: ${data.status.toUpperCase()}`;
+                    statusResult.className = `status-result ${data.status}`;
+                    statusResult.style.display = 'block';
+
+                    if (data.status === 'pending') {
+                        statusResult.textContent += ' - Menunggu akses dari System (Admin)';
+                    } else if (data.status === 'approved') {
+                        statusResult.textContent += ' - Siap terhubung ke jaringan';
+                    } else if (data.status === 'rejected') {
+                        statusResult.textContent += ' - Akses ditolak';
+                    }
+                } else {
+                    statusResult.textContent = data.message;
+                    statusResult.className = 'status-result not-found';
+                    statusResult.style.display = 'block';
+                }
+            } catch (error) {
+                statusResult.textContent = 'Gagal mengecek status (Server backend tidak aktif)';
+                statusResult.className = 'status-result not-found';
+                statusResult.style.display = 'block';
+            }
+        }
+
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
