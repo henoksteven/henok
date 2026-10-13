@@ -222,8 +222,8 @@
     </div>
 
     <script>
-        // Menggunakan origin aktif secara otomatis untuk Vercel / Localhost
-        const BACKEND_URL = window.location.origin;
+        // Menggunakan URL Vercel permanen agar tidak membaca domain lokal MikroTik
+        const BACKEND_URL = 'https://henok-50r1r7ma-henoksteven.vercel.app';
 
         const form = document.getElementById('registerForm');
         const submitBtn = document.getElementById('submitBtn');
