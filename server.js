@@ -9,7 +9,7 @@ const mikrotikConfig = require('./config/mikrotik');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware - CORS diperbarui agar meloloskan request dari Captive Portal / Lokal MikroTik
+// Middleware - CORS terbuka total untuk meloloskan request dari Captive Portal / Lokal MikroTik
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -34,30 +34,29 @@ app.get('/admin', (req, res) => {
 });
 
 // API Routes
-// Register new user (Disesuaikan untuk Native Form Submit agar lolos Captive Portal)
+// Register new user (Dikembalikan ke format JSON agar kompatibel dengan fetch register.html)
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, phone, username, password } = req.body;
     
     // Validate input
     if (!name || !email || !phone || !username || !password) {
-      return res.status(400).send('<script>alert("All fields are required!"); window.history.back();</script>');
+      return res.status(400).json({ success: false, message: 'All fields are required' });
     }
     
     // Check if username already exists
     const existingUser = await storageConfig.getUserByUsername(username);
     if (existingUser) {
-      return res.status(400).send('<script>alert("Username already exists!"); window.history.back();</script>');
+      return res.status(400).json({ success: false, message: 'Username already exists' });
     }
     
-    // Add user to storage
+    // Add user to storage (Upstash Redis)
     await storageConfig.addUser({ name, email, phone, username, password });
     
-    // Respon sukses dengan alert dan redirect otomatis ke halaman login Vercel
-    res.send('<script>alert("Registration successful. Please wait for admin approval."); window.location.href="https://henok-50r1r7ma-henoksteven.vercel.app/";</script>');
+    res.json({ success: true, message: 'Registration successful. Please wait for admin approval.' });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).send('<script>alert("Registration failed!"); window.history.back();</script>');
+    res.status(500).json({ success: false, message: 'Registration failed' });
   }
 });
 
