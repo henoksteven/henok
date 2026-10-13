@@ -178,8 +178,7 @@
             <p>Dapatkan akses jaringan hotspot Anda</p>
         </div>
 
-        <!-- Form langsung diarahkan ke endpoint Vercel secara native -->
-        <form id="registerForm" method="POST">
+        <form id="registerForm">
             <div class="form-group">
                 <label for="name">Nama Lengkap</label>
                 <input type="text" id="name" name="name" required placeholder="Masukkan nama lengkap">
@@ -224,27 +223,61 @@
 
     <script>
         const BACKEND_URL = 'https://henok-50r1r7ma-henoksteven.vercel.app';
+
         const form = document.getElementById('registerForm');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
         const message = document.getElementById('message');
 
-        // Set action form ke URL backend Vercel secara mutlak
-        form.action = `${BACKEND_URL}/api/register`;
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        form.addEventListener('submit', (e) => {
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
             if (password !== confirmPassword) {
-                e.preventDefault();
                 showMessage('Password tidak cocok!', 'error');
                 return;
             }
 
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                username: document.getElementById('username').value,
+                password: password
+            };
+
             submitBtn.disabled = true;
             btnText.innerHTML = '<span class="loading"></span> Memproses...';
-            // Form akan lanjut melakukan submit native (pindah/redirect langsung ke server Vercel)
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showMessage(data.message + ' Mengalihkan...', 'success');
+                    form.reset();
+
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showMessage(data.message || 'Gagal mendaftar.', 'error');
+                }
+            } catch (error) {
+                showMessage('Terjadi kesalahan koneksi ke server backend.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                btnText.textContent = 'Daftar Sekarang';
+            }
         });
 
         function showMessage(text, type) {
