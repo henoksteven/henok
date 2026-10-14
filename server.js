@@ -1,4 +1,4 @@
- require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -11,9 +11,9 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware - CORS terbuka total untuk meloloskan request dari Captive Portal / Lokal MikroTik
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(bodyParser.json());
@@ -22,196 +22,194 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes Static File
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/register', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'register.html'));
+  res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // API Routes
-// Register new user (Dikembalikan ke format JSON agar kompatibel dengan fetch register.html)
+// Register new user (Data Redis dijamin aman tidak berubah)
 app.post('/api/register', async (req, res) => {
-  try {
-    const { name, email, phone, username, password } = req.body;
-    
-    // Validate input
-    if (!name || !email || !phone || !username || !password) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
-    }
-    
-    // Check if username already exists
-    const existingUser = await storageConfig.getUserByUsername(username);
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Username already exists' });
-    }
-    
-    // Add user to storage (Upstash Redis)
-    await storageConfig.addUser({ name, email, phone, username, password });
-    
-    res.json({ success: true, message: 'Registration successful. Please wait for admin approval.' });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ success: false, message: 'Registration failed' });
-  }
+  try {
+    const { name, email, phone, username, password } = req.body;
+    
+    if (!name || !email || !phone || !username || !password) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+    
+    const existingUser = await storageConfig.getUserByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Username already exists' });
+    }
+    
+    await storageConfig.addUser({ name, email, phone, username, password });
+    
+    res.json({ success: true, message: 'Registration successful. Please wait for admin approval.' });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ success: false, message: 'Registration failed' });
+  }
 });
 
-// Get all users (admin only) - DENGAN STATISTIK MIKROTIK
+// Get all users (admin only) - DENGAN PENGAMANAN SUPAYA TIDAK MEMBANNJIRI ROUTER MIKROTIK
 app.get('/api/users', async (req, res) => {
-  try {
-    const users = await storageConfig.getAllUsers();
-    
-    // Ambil data statistik aktif & user dari MikroTik
-    let mikrotikStats = [];
-    if (mikrotikConfig.getUsersStats && typeof mikrotikConfig.getUsersStats === 'function') {
-      mikrotikStats = await mikrotikConfig.getUsersStats();
-    }
+  try {
+    const users = await storageConfig.getAllUsers();
+    
+    // Ambil statistik MikroTik dengan batas timeout sangat ketat (2 detik) 
+    // agar jika koneksi sibuk/untuk captive portal, admin panel tetap merespons cepat tanpa spam sesi API.
+    let mikrotikStats = [];
+    try {
+      if (mikrotikConfig.getUsersStats && typeof mikrotikConfig.getUsersStats === 'function') {
+        mikrotikStats = await Promise.race([
+          mikrotikConfig.getUsersStats(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Mikrotik Timeout Protected')), 2000))
+        ]);
+      }
+    } catch (mikrotikError) {
+      // Lewatkan error statistik agar data Redis tetap aman terkirim ke panel admin
+    }
 
-    // Gabungkan data user storage dengan statistik MikroTik
-    const enrichedUsers = users.map(user => {
-      const stats = mikrotikStats.find(s => s.name === user.username || s.user === user.username) || {};
-      
-      return {
-        ...user,
-        bytesIn: parseInt(stats['bytes-in'] || stats.bytesIn || 0),
-        bytesOut: parseInt(stats['bytes-out'] || stats.bytesOut || 0),
-        uptime: stats.uptime || 'Off'
-      };
-    });
+    const enrichedUsers = users.map(user => {
+      const stats = mikrotikStats.find(s => s.name === user.username || s.user === user.username) || {};
+      
+      return {
+        ...user,
+        bytesIn: parseInt(stats['bytes-in'] || stats.bytesIn || 0),
+        bytesOut: parseInt(stats['bytes-out'] || stats.bytesOut || 0),
+        uptime: stats.uptime || 'Off'
+      };
+    });
 
-    res.json({ success: true, users: enrichedUsers });
-  } catch (error) {
-    console.error('Error getting users:', error);
-    res.status(500).json({ success: false, message: 'Failed to get users' });
-  }
+    res.json({ success: true, users: enrichedUsers });
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ success: false, users: [], message: 'Failed to get users' });
+  }
 });
 
 // Approve user (admin only)
 app.post('/api/approve', async (req, res) => {
-  try {
-    const { username, adminName } = req.body;
-    
-    if (!username || !adminName) {
-      return res.status(400).json({ success: false, message: 'Username and admin name are required' });
-    }
-    
-    // Update user status in storage
-    await storageConfig.approveUser(username, adminName);
-    
-    // Add user to Mikrotik hotspot
-    const userData = await storageConfig.getUserByUsername(username);
-    await mikrotikConfig.addUserToHotspot(userData.username, userData.password);
-    
-    res.json({ success: true, message: 'User approved successfully' });
-  } catch (error) {
-    console.error('Approval error:', error);
-    res.status(500).json({ success: false, message: 'Approval failed' });
-  }
+  try {
+    const { username, adminName } = req.body;
+    
+    if (!username || !adminName) {
+      return res.status(400).json({ success: false, message: 'Username and admin name are required' });
+    }
+    
+    await storageConfig.approveUser(username, adminName);
+    
+    const userData = await storageConfig.getUserByUsername(username);
+    await mikrotikConfig.addUserToHotspot(userData.username, userData.password);
+    
+    res.json({ success: true, message: 'User approved successfully' });
+  } catch (error) {
+    console.error('Approval error:', error);
+    res.status(500).json({ success: false, message: 'Approval failed' });
+  }
 });
 
 // Reject user (admin only)
 app.post('/api/reject', async (req, res) => {
-  try {
-    const { username, adminName } = req.body;
-    
-    if (!username || !adminName) {
-      return res.status(400).json({ success: false, message: 'Username and admin name are required' });
-    }
-    
-    await storageConfig.rejectUser(username, adminName);
-    
-    res.json({ success: true, message: 'User rejected successfully' });
-  } catch (error) {
-    console.error('Rejection error:', error);
-    res.status(500).json({ success: false, message: 'Rejection failed' });
-  }
+  try {
+    const { username, adminName } = req.body;
+    
+    if (!username || !adminName) {
+      return res.status(400).json({ success: false, message: 'Username and admin name are required' });
+    }
+    
+    await storageConfig.rejectUser(username, adminName);
+    
+    res.json({ success: true, message: 'User rejected successfully' });
+  } catch (error) {
+    console.error('Rejection error:', error);
+    res.status(500).json({ success: false, message: 'Rejection failed' });
+  }
 });
 
 // Delete user (admin only)
 app.delete('/api/users/:username', async (req, res) => {
-  try {
-    const { username } = req.params;
-    
-    await storageConfig.deleteUser(username);
-    await mikrotikConfig.removeUserFromHotspot(username);
-    
-    res.json({ success: true, message: 'User deleted successfully' });
-  } catch (error) {
-    console.error('Deletion error:', error);
-    res.status(500).json({ success: false, message: 'Deletion failed' });
-  }
+  try {
+    const { username } = req.params;
+    
+    await storageConfig.deleteUser(username);
+    await mikrotikConfig.removeUserFromHotspot(username);
+    
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Deletion error:', error);
+    res.status(500).json({ success: false, message: 'Deletion failed' });
+  }
 });
 
-// Validate login
+// Validate login (Aman untuk Captive Portal klien)
 app.post('/api/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password are required' });
-    }
-    
-    // Get user from storage
-    const user = await storageConfig.getUserByUsername(username);
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    // Check if password matches
-    if (user.password !== password) {
-      return res.status(401).json({ success: false, message: 'Invalid password' });
-    }
-    
-    // Check if user is approved
-    if (user.status !== 'approved') {
-      return res.status(403).json({ success: false, message: 'User not approved yet' });
-    }
-    
-    // Validate with Mikrotik
-    const mikrotikResult = await mikrotikConfig.validateLogin(username, password);
-    
-    if (mikrotikResult.success) {
-      res.json({ success: true, message: 'Login successful', user: { name: user.name, username: user.username } });
-    } else {
-      res.status(401).json({ success: false, message: mikrotikResult.message });
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Login failed' });
-  }
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Username and password are required' });
+    }
+    
+    const user = await storageConfig.getUserByUsername(username);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    if (user.password !== password) {
+      return res.status(401).json({ success: false, message: 'Invalid password' });
+    }
+    
+    if (user.status !== 'approved') {
+      return res.status(403).json({ success: false, message: 'User not approved yet' });
+    }
+    
+    const mikrotikResult = await mikrotikConfig.validateLogin(username, password);
+    
+    if (mikrotikResult.success) {
+      res.json({ success: true, message: 'Login successful', user: { name: user.name, username: user.username } });
+    } else {
+      res.status(401).json({ success: false, message: mikrotikResult.message });
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, message: 'Login failed' });
+  }
 });
 
 // Check user status
 app.get('/api/status/:username', async (req, res) => {
-  try {
-    const { username } = req.params;
-    const user = await storageConfig.getUserByUsername(username);
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    res.json({ success: true, status: user.status });
-  } catch (error) {
-    console.error('Status check error:', error);
-    res.status(500).json({ success: false, message: 'Status check failed' });
-  }
+  try {
+    const { username } = req.params;
+    const user = await storageConfig.getUserByUsername(username);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({ success: true, status: user.status });
+  } catch (error) {
+    console.error('Status check error:', error);
+    res.status(500).json({ success: false, message: 'Status check failed' });
+  }
 });
 
 // Admin authentication
 app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body;
-  
-  if (password === process.env.ADMIN_PASSWORD) {
-    res.json({ success: true, message: 'Admin login successful' });
-  } else {
-    res.status(401).json({ success: false, message: 'Invalid admin password' });
-  }
+  const { password } = req.body;
+  
+  if (password === process.env.ADMIN_PASSWORD) {
+    res.json({ success: true, message: 'Admin login successful' });
+  } else {
+    res.status(401).json({ success: false, message: 'Invalid admin password' });
+  }
 });
 
 // Export app handler untuk Vercel Serverless
@@ -219,8 +217,7 @@ module.exports = app;
 
 // Jalankan server jika running di lokal (npm start / node server.js)
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 }
-ini server js nya satuin aja
