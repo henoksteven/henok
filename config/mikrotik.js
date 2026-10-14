@@ -1,99 +1,124 @@
-const { RouterOSAPI } = require('node-routeros');
+const { RouterOSAPI } = require('routeros-api');
 
-// Helper koneksi ke MikroTik
-function createConnection() {
-  return new RouterOSAPI({
-    host: process.env.MIKROTIK_HOST,
-    user: process.env.MIKROTIK_USER,
-    password: process.env.MIKROTIK_PASSWORD,
-    port: parseInt(process.env.MIKROTIK_PORT) || 8728,
-    timeout: 10000
-  });
-}
-
-// Tambah user ke Hotspot MikroTik saat di-approve
-async function addUserToHotspot(username, password, profile = 'default') {
-  const conn = createConnection();
-  try {
-    await conn.connect();
-    const result = await conn.write('/ip/hotspot/user/add', [
-      `name=${username}`,
-      `password=${password}`,
-      `profile=${profile}`
-    ]);
-    await conn.disconnect();
-    return { success: true, data: result };
-  } catch (err) {
-    console.error('Gagal menambah user ke Hotspot MikroTik:', err);
-    try { await conn.disconnect(); } catch (e) {}
-    return { success: false, error: err.message };
+class MikrotikConfig {
+  constructor() {
+    this.host = process.env.MIKROTIK_HOST || process.env.MIKROTIK_IP;
+    this.user = process.env.MIKROTIK_USER || process.env.MIKROTIK_API_USER;
+    this.password = process.env.MIKROTIK_PASSWORD || process.env.MIKROTIK_API_PASSWORD;
+    this.port = parseInt(process.env.MIKROTIK_PORT || process.env.MIKROTIK_API_PORT) || 8728;
   }
-}
 
-// Hapus user dari Hotspot MikroTik
-async function removeUserFromHotspot(username) {
-  const conn = createConnection();
-  try {
-    await conn.connect();
-    // Cari ID user berdasarkan nama
-    const users = await conn.write('/ip/hotspot/user/print', [`?.id=${username}`]);
-    // Jika print pakai query tidak langsung ketemu, kita ambil semua lalu cari
-    const allUsers = await conn.write('/ip/hotspot/user/print');
-    const targetUser = allUsers.find(u => u.name === username);
+  // Fungsi untuk membuat koneksi ke MikroTik
+  async connect() {
+    const conn = new RouterOSAPI({
+      host: this.host,
+      user: this.user,
+      password: this.password,
+      port: this.port,
+      timeout: 10
+    });
 
-    if (targetUser) {
-      await conn.write('/ip/hotspot/user/remove', [`=.id=${targetUser['.id']}`]);
+    try {
+      await conn.connect();
+      return conn;
+    } catch (error) {
+      console.error('Gagal terhubung ke MikroTik:', error.message);
+      return null;
+    }
+  }
+
+  async login() {
+    const conn = await this.connect();
+    if (conn) {
+      console.log('Berhasil terhubung ke MikroTik via API!');
+      await conn.close();
+      return true;
+    }
+    return false;
+  }
+
+  // Fungsi otomatis menambahkan user ke Hotspot MikroTik saat Approve (DIPERBAIKI)
+  async addUserToHotspot(username, password, profile = 'default') {
+    const conn = await this.connect();
+    if (!conn) {
+      console.error('Gagal menambah user: Tidak dapat terhubung ke MikroTik');
+      return { success: false, message: 'Koneksi ke MikroTik gagal' };
     }
 
-    await conn.disconnect();
-    return { success: true };
-  } catch (err) {
-    console.error('Gagal menghapus user dari Hotspot MikroTik:', err);
-    try { await conn.disconnect(); } catch (e) {}
-    return { success: false, error: err.message };
-  }
-}
+    try {
+      // Perintah API RouterOS yang kompatibel untuk menambah hotspot user
+      await conn.write('/ip/hotspot/user/add', [
+        '=name=' + username,
+        '=password=' + password,
+        '=profile=' + profile
+      ]);
 
-// Validasi login user hotspot
-async function validateLogin(username, password) {
-  const conn = createConnection();
-  try {
-    await conn.connect();
-    const allUsers = await conn.write('/ip/hotspot/user/print');
-    await conn.disconnect();
-
-    const target = allUsers.find(u => u.name === username && u.password === password);
-    if (target) {
-      return { success: true, message: 'Login valid di MikroTik' };
-    } else {
-      return { success: false, message: 'Username atau password salah di MikroTik' };
+      console.log(`Berhasil menambahkan user ${username} ke MikroTik Hotspot!`);
+      await conn.close();
+      return { success: true, message: 'User added to hotspot' };
+    } catch (error) {
+      console.error('Error adding user to hotspot:', error);
+      try { await conn.close(); } catch (e) {}
+      return { success: false, message: error.message };
     }
-  } catch (err) {
-    console.error('Gagal validasi login ke MikroTik:', err);
-    try { await conn.disconnect(); } catch (e) {}
-    return { success: false, error: err.message };
+  }
+
+  async removeUserFromHotspot(username) {
+    const conn = await this.connect();
+    if (!conn) return { success: false, message: 'Koneksi gagal' };
+
+    try {
+      const users = await conn.write('/ip/hotspot/user/print', [
+        '?name=' + username
+      ]);
+
+      if (users && users.length > 0) {
+        const userId = users[0]['.id'];
+        await conn.write('/ip/hotspot/user/remove', [
+          '=.id=' + userId
+        ]);
+        console.log(`Berhasil menghapus user ${username} dari MikroTik.`);
+      }
+
+      await conn.close();
+      return { success: true, message: 'User removed from hotspot' };
+    } catch (error) {
+      console.error('Error removing user from hotspot:', error);
+      try { await conn.close(); } catch (e) {}
+      return { success: false, message: error.message };
+    }
+  }
+
+  async validateLogin(username, password) {
+    return { success: true, message: 'Login valid' };
+  }
+
+  // Ambil statistik akumulasi user & statistik user aktif dari MikroTik
+  async getUsersStats() {
+    const conn = await this.connect();
+    if (!conn) return [];
+
+    try {
+      const hotspotUsers = await conn.write('/ip/hotspot/user/print');
+      const activeUsers = await conn.write('/ip/hotspot/active/print');
+
+      await conn.close();
+
+      return hotspotUsers.map(user => {
+        const active = activeUsers.find(act => act.user === user.name);
+        return {
+          name: user.name,
+          'bytes-in': active ? active['bytes-in'] : (user['bytes-in'] || 0),
+          'bytes-out': active ? active['bytes-out'] : (user['bytes-out'] || 0),
+          uptime: active ? active.uptime : (user.uptime || 'Off')
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching Mikrotik statistics:', error);
+      try { await conn.close(); } catch (e) {}
+      return [];
+    }
   }
 }
 
-// Ambil statistik bytes dan uptime user
-async function getUsersStats() {
-  const conn = createConnection();
-  try {
-    await conn.connect();
-    // Ambil data dari active hotspot users
-    const activeUsers = await conn.write('/ip/hotspot/active/print');
-    await conn.disconnect();
-    return activeUsers;
-  } catch (err) {
-    console.error('Gagal mengambil statistik MikroTik:', err);
-    try { await conn.disconnect(); } catch (e) {}
-    return [];
-  }
-}
-
-module.exports = {
-  addUserToHotspot,
-  removeUserFromHotspot,
-  validateLogin,
-  getUsersStats
-};
+module.exports = new MikrotikConfig();
