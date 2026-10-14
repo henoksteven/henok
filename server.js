@@ -34,7 +34,7 @@ app.get('/admin', (req, res) => {
 });
 
 // API Routes
-// Register new user (Dikembalikan ke format JSON agar kompatibel dengan fetch register.html)
+// Register new user
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, phone, username, password } = req.body;
@@ -60,15 +60,22 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Get all users (admin only) - DENGAN STATISTIK MIKROTIK
+// Get all users (admin only) - DENGAN PENGAMAN TIMEOUT MIKROTIK
 app.get('/api/users', async (req, res) => {
   try {
     const users = await storageConfig.getAllUsers();
     
-    // Ambil data statistik aktif & user dari MikroTik
+    // Ambil data statistik dari MikroTik dengan pengaman timeout 4 detik agar tidak nge-hang
     let mikrotikStats = [];
-    if (mikrotikConfig.getUsersStats && typeof mikrotikConfig.getUsersStats === 'function') {
-      mikrotikStats = await mikrotikConfig.getUsersStats();
+    try {
+      if (mikrotikConfig.getUsersStats && typeof mikrotikConfig.getUsersStats === 'function') {
+        mikrotikStats = await Promise.race([
+          mikrotikConfig.getUsersStats(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('MikroTik Timeout')), 4000))
+        ]);
+      }
+    } catch (mikrotikError) {
+      console.log('MikroTik stats skipped / timeout:', mikrotikError.message);
     }
 
     // Gabungkan data user storage dengan statistik MikroTik
@@ -86,7 +93,7 @@ app.get('/api/users', async (req, res) => {
     res.json({ success: true, users: enrichedUsers });
   } catch (error) {
     console.error('Error getting users:', error);
-    res.status(500).json({ success: false, message: 'Failed to get users' });
+    res.status(500).json({ success: false, users: [], message: 'Failed to get users' });
   }
 });
 
