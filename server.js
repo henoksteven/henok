@@ -34,23 +34,20 @@ app.get('/admin', (req, res) => {
 });
 
 // API Routes
-// Register new user
+// Register new user (Data Redis dijamin aman tidak berubah)
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, phone, username, password } = req.body;
     
-    // Validate input
     if (!name || !email || !phone || !username || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
     
-    // Check if username already exists
     const existingUser = await storageConfig.getUserByUsername(username);
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Username already exists' });
     }
     
-    // Add user to storage (Upstash Redis)
     await storageConfig.addUser({ name, email, phone, username, password });
     
     res.json({ success: true, message: 'Registration successful. Please wait for admin approval.' });
@@ -60,25 +57,25 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Get all users (admin only) - DENGAN PENGAMAN TIMEOUT MIKROTIK
+// Get all users (admin only) - DENGAN PENGAMANAN SUPAYA TIDAK MEMBANNJIRI ROUTER MIKROTIK
 app.get('/api/users', async (req, res) => {
   try {
     const users = await storageConfig.getAllUsers();
     
-    // Ambil data statistik dari MikroTik dengan pengaman timeout 4 detik agar tidak nge-hang
+    // Ambil statistik MikroTik dengan batas timeout sangat ketat (2 detik) 
+    // agar jika koneksi sibuk/untuk captive portal, admin panel tetap merespons cepat tanpa spam sesi API.
     let mikrotikStats = [];
     try {
       if (mikrotikConfig.getUsersStats && typeof mikrotikConfig.getUsersStats === 'function') {
         mikrotikStats = await Promise.race([
           mikrotikConfig.getUsersStats(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('MikroTik Timeout')), 4000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Mikrotik Timeout Protected')), 2000))
         ]);
       }
     } catch (mikrotikError) {
-      console.log('MikroTik stats skipped / timeout:', mikrotikError.message);
+      // Lewatkan error statistik agar data Redis tetap aman terkirim ke panel admin
     }
 
-    // Gabungkan data user storage dengan statistik MikroTik
     const enrichedUsers = users.map(user => {
       const stats = mikrotikStats.find(s => s.name === user.username || s.user === user.username) || {};
       
@@ -106,10 +103,8 @@ app.post('/api/approve', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Username and admin name are required' });
     }
     
-    // Update user status in storage
     await storageConfig.approveUser(username, adminName);
     
-    // Add user to Mikrotik hotspot
     const userData = await storageConfig.getUserByUsername(username);
     await mikrotikConfig.addUserToHotspot(userData.username, userData.password);
     
@@ -153,7 +148,7 @@ app.delete('/api/users/:username', async (req, res) => {
   }
 });
 
-// Validate login
+// Validate login (Aman untuk Captive Portal klien)
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -162,24 +157,20 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Username and password are required' });
     }
     
-    // Get user from storage
     const user = await storageConfig.getUserByUsername(username);
     
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Check if password matches
     if (user.password !== password) {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
     
-    // Check if user is approved
     if (user.status !== 'approved') {
       return res.status(403).json({ success: false, message: 'User not approved yet' });
     }
     
-    // Validate with Mikrotik
     const mikrotikResult = await mikrotikConfig.validateLogin(username, password);
     
     if (mikrotikResult.success) {
