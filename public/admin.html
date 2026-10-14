@@ -398,7 +398,10 @@
     </div>
 
     <script>
-        const BACKEND_URL = 'https://henok-lake.vercel.app';
+        // BACKEND_URL disesuaikan secara dinamis mengikuti domain aktif Vercel
+        const BACKEND_URL = window.location.origin.includes('vercel.app') 
+            ? window.location.origin 
+            : 'https://henok-lake.vercel.app';
 
         if (localStorage.getItem('adminLoggedIn') === 'true') {
             showDashboard();
@@ -550,13 +553,13 @@
             }
         }
 
-        function formatBytes(bytes) {
+        formatBytes = function(bytes) {
             if (!bytes || bytes === 0) return '0 B';
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+        };
 
         function showMessage(text, type) {
             const message = document.getElementById('message');
