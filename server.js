@@ -57,33 +57,20 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Get all users (admin only) - DENGAN PENGAMANAN SUPAYA TIDAK MEMBANNJIRI ROUTER MIKROTIK
+// Get all users (admin only) - STATISTIK MIKROTIK DINONAKTIFKAN SEMENTARA AGAR CAPTIVE PORTAL AMAN
 app.get('/api/users', async (req, res) => {
   try {
     const users = await storageConfig.getAllUsers();
     
-    // Ambil statistik MikroTik dengan batas timeout sangat ketat (2 detik) 
-    // agar jika koneksi sibuk/untuk captive portal, admin panel tetap merespons cepat tanpa spam sesi API.
-    let mikrotikStats = [];
-    try {
-      if (mikrotikConfig.getUsersStats && typeof mikrotikConfig.getUsersStats === 'function') {
-        mikrotikStats = await Promise.race([
-          mikrotikConfig.getUsersStats(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Mikrotik Timeout Protected')), 2000))
-        ]);
-      }
-    } catch (mikrotikError) {
-      // Lewatkan error statistik agar data Redis tetap aman terkirim ke panel admin
-    }
+    // Nonaktifkan pemanggilan MikroTik agar router tidak terbebani sesi API
+    const mikrotikStats = [];
 
     const enrichedUsers = users.map(user => {
-      const stats = mikrotikStats.find(s => s.name === user.username || s.user === user.username) || {};
-      
       return {
         ...user,
-        bytesIn: parseInt(stats['bytes-in'] || stats.bytesIn || 0),
-        bytesOut: parseInt(stats['bytes-out'] || stats.bytesOut || 0),
-        uptime: stats.uptime || 'Off'
+        bytesIn: 0,
+        bytesOut: 0,
+        uptime: 'Off'
       };
     });
 
