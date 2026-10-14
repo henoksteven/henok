@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Minimalist Dashboard</title>
+    <title>Admin Panel - Konoha Network</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -12,9 +12,9 @@
             --border-color: #e2e8f0;
             --text-primary: #0f172a;
             --text-secondary: #64748b;
-            --accent: #4f46e5;
-            --accent-hover: #4338ca;
-            --accent-light: rgba(79, 70, 229, 0.1);
+            --accent: #f97316;
+            --accent-hover: #ea580c;
+            --accent-light: rgba(249, 115, 22, 0.1);
         }
 
         * {
@@ -58,7 +58,7 @@
             border-radius: 16px;
             max-width: 380px;
             width: 90%;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             text-align: center;
         }
 
@@ -79,7 +79,6 @@
             color: var(--text-primary);
             font-size: 14px;
             outline: none;
-            transition: all 0.2s ease;
         }
 
         .login-box input:focus {
@@ -118,7 +117,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
         }
 
         .header h1 {
@@ -148,7 +146,6 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 13px;
-            transition: all 0.2s ease;
         }
 
         .logout-btn:hover {
@@ -169,7 +166,6 @@
             border: 1px solid var(--border-color);
             padding: 20px 24px;
             border-radius: 16px;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
         }
 
         .stat-card h3 {
@@ -177,7 +173,6 @@
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             margin-bottom: 8px;
         }
 
@@ -192,7 +187,6 @@
             border: 1px solid var(--border-color);
             padding: 28px;
             border-radius: 16px;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
         }
 
         .section-header {
@@ -217,11 +211,10 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 13px;
-            transition: background 0.2s ease;
         }
 
         .refresh-btn:hover {
-            background: rgba(79, 70, 229, 0.15);
+            background: rgba(249, 115, 22, 0.2);
         }
 
         .table-container {
@@ -247,7 +240,6 @@
             font-weight: 600;
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.03em;
         }
 
         td {
@@ -268,20 +260,9 @@
             text-transform: capitalize;
         }
 
-        .status.pending {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .status.approved {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .status.rejected {
-            background: #fee2e2;
-            color: #dc2626;
-        }
+        .status.pending { background: #fef3c7; color: #d97706; }
+        .status.approved { background: #dcfce7; color: #15803d; }
+        .status.rejected { background: #fee2e2; color: #dc2626; }
 
         .traffic-info {
             font-size: 13px;
@@ -310,25 +291,14 @@
             transition: all 0.2s ease;
         }
 
-        .approve-btn {
-            color: #15803d;
-        }
-        .approve-btn:hover:not(:disabled) { background: #dcfce7; border-color: #bbf7d0; }
+        .approve-btn { color: #15803d; }
+        .approve-btn:hover { background: #dcfce7; border-color: #bbf7d0; }
 
-        .reject-btn {
-            color: #dc2626;
-        }
-        .reject-btn:hover:not(:disabled) { background: #fee2e2; border-color: #fecaca; }
+        .reject-btn { color: #dc2626; }
+        .reject-btn:hover { background: #fee2e2; border-color: #fecaca; }
 
-        .delete-btn {
-            color: var(--text-secondary);
-        }
-        .delete-btn:hover:not(:disabled) { background: var(--bg-main); color: var(--text-primary); }
-
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .delete-btn { color: var(--text-secondary); }
+        .delete-btn:hover { background: var(--bg-main); color: var(--text-primary); }
 
         .message {
             padding: 12px 16px;
@@ -338,16 +308,8 @@
             font-size: 13px;
             font-weight: 500;
         }
-
-        .message.success {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .message.error {
-            background: #fee2e2;
-            color: #dc2626;
-        }
+        .message.success { background: #dcfce7; color: #15803d; }
+        .message.error { background: #fee2e2; color: #dc2626; }
 
         .loading, .empty-state {
             text-align: center;
@@ -375,7 +337,7 @@
         <div class="header">
             <h1>Hotspot Control Panel</h1>
             <div class="admin-info">
-                <span id="adminName">Sasuke</span>
+                <span id="adminName">Admin Konoha</span>
                 <button class="logout-btn" onclick="logout()">Keluar</button>
             </div>
         </div>
@@ -383,15 +345,15 @@
         <div class="stats">
             <div class="stat-card">
                 <h3>Total Users</h3>
-                <div class="number" id="totalUsers">2</div>
+                <div class="number" id="totalUsers">0</div>
             </div>
             <div class="stat-card">
                 <h3>Pending</h3>
-                <div class="number" id="pendingUsers">1</div>
+                <div class="number" id="pendingUsers">0</div>
             </div>
             <div class="stat-card">
                 <h3>Approved</h3>
-                <div class="number" id="approvedUsers">1</div>
+                <div class="number" id="approvedUsers">0</div>
             </div>
             <div class="stat-card">
                 <h3>Rejected</h3>
@@ -401,99 +363,67 @@
 
         <div class="users-section">
             <div class="section-header">
-                <h2>Daftar (Preview Mode)</h2>
-                <button class="refresh-btn" onclick="loadUsers()">Refresh</button>
+                <h2>Daftar Pengguna Hotspot</h2>
+                <button class="refresh-btn" onclick="loadUsers()">Refresh Data</button>
             </div>
 
             <div class="message" id="message"></div>
 
             <div class="table-container">
-                <table id="usersTable">
+                <table>
                     <thead>
                         <tr>
                             <th>Nama</th>
                             <th>Email</th>
                             <th>Username</th>
                             <th>Status</th>
-                            <th>Tanggal</th>
                             <th>Penggunaan Traffic</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody">
-                        <tr>
-                            <td>Ahmad</td>
-                            <td>ahmad@smk.sch.id</td>
-                            <td>ahmad_net</td>
-                            <td><span class="status approved">approved</span></td>
-                            <td>06/10/2026</td>
-                            <td>
-                                <div class="traffic-info">
-                                    ⏱️ Uptime: <span>02:15:30</span><br>
-                                    ⬇ Download: <span>145.2 MB</span> | ⬆️ Upload: <span>24.5 MB</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="actions">
-                                    <button class="action-btn approve-btn" disabled>✓ Approve</button>
-                                    <button class="action-btn reject-btn" disabled>✗ Reject</button>
-                                    <button class="action-btn delete-btn">🗑 Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Budi Santoso</td>
-                            <td>budi@gmail.com</td>
-                            <td>budi_hotspot</td>
-                            <td><span class="status pending">pending</span></td>
-                            <td>06/10/2026</td>
-                            <td>
-                                <div class="traffic-info">
-                                    ⏱️ Uptime: <span>Off</span><br>
-                                    ⬇️ Download: <span>0 B</span> | ⬆️ Upload: <span>0 B</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="actions">
-                                    <button class="action-btn approve-btn">✓ Approve</button>
-                                    <button class="action-btn reject-btn">✗ Reject</button>
-                                    <button class="action-btn delete-btn">🗑 Delete</button>
-                                </div>
-                            </td>
-                        </tr>
+                        <!-- Data akan dimuat otomatis lewat API -->
                     </tbody>
                 </table>
             </div>
 
             <div class="empty-state" id="emptyState" style="display: none;">
-                <p>Belum ada user terdaftar</p>
+                <p>Belum ada user terdaftar di database Upstash Redis.</p>
             </div>
 
-            <div class="loading" id="loading" style="display: none;">
-                Memuat data...
+            <div class="loading" id="loading" style="display: block;">
+                Memuat data dari database...
             </div>
         </div>
     </div>
 
     <script>
-        let isAdminLoggedIn = false;
-        let adminName = 'Admin';
+        const BACKEND_URL = 'https://henok-lake.vercel.app';
 
         if (localStorage.getItem('adminLoggedIn') === 'true') {
-            isAdminLoggedIn = true;
             showDashboard();
         }
 
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const password = document.getElementById('adminPassword').value;
 
-            if (password.trim() !== '') {
-                isAdminLoggedIn = true;
-                localStorage.setItem('adminLoggedIn', 'true');
-                showDashboard();
-            } else {
-                showLoginMessage('Password tidak boleh kosong!', 'error');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('adminLoggedIn', 'true');
+                    showDashboard();
+                } else {
+                    showLoginMessage('Password admin salah!', 'error');
+                }
+            } catch (error) {
+                showLoginMessage('Gagal terhubung ke server', 'error');
             }
         });
 
@@ -502,28 +432,130 @@
             message.textContent = text;
             message.className = `message ${type}`;
             message.style.display = 'block';
-
-            setTimeout(() => {
-                message.style.display = 'none';
-            }, 3000);
+            setTimeout(() => { message.style.display = 'none'; }, 3000);
         }
 
         function showDashboard() {
             document.getElementById('loginModal').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            document.getElementById('adminName').textContent = adminName;
+            loadUsers();
         }
 
         function logout() {
-            isAdminLoggedIn = false;
             localStorage.removeItem('adminLoggedIn');
             document.getElementById('loginModal').style.display = 'flex';
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('adminPassword').value = '';
         }
 
-        function loadUsers() {
-            showMessage('Data berhasil direfresh (Preview Mode)', 'success');
+        async function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('emptyState');
+
+            loading.style.display = 'block';
+            tbody.innerHTML = '';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/users`);
+                const data = await response.json();
+
+                loading.style.display = 'none';
+
+                if (data.success && data.users.length > 0) {
+                    emptyState.style.display = 'none';
+                    
+                    let total = data.users.length;
+                    let pending = 0;
+                    let approved = 0;
+                    let rejected = 0;
+
+                    data.users.forEach(user => {
+                        if (user.status === 'pending') pending++;
+                        if (user.status === 'approved') approved++;
+                        if (user.status === 'rejected') rejected++;
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${user.name || '-'}</td>
+                            <td>${user.email || '-'}</td>
+                            <td><b>${user.username}</b></td>
+                            <td><span class="status ${user.status}">${user.status}</span></td>
+                            <td>
+                                <div class="traffic-info">
+                                    ⏱️ Uptime: <span>${user.uptime || 'Off'}</span><br>
+                                    ⬇️ DL: <span>${formatBytes(user.bytesIn)}</span> | ⬆️ UL: <span>${formatBytes(user.bytesOut)}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <button class="action-btn approve-btn" onclick="updateStatus('${user.username}', 'approve')" ${user.status === 'approved' ? 'disabled' : ''}>Approve</button>
+                                    <button class="action-btn reject-btn" onclick="updateStatus('${user.username}', 'reject')" ${user.status === 'rejected' ? 'disabled' : ''}>Reject</button>
+                                    <button class="action-btn delete-btn" onclick="deleteUser('${user.username}')">Delete</button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    document.getElementById('totalUsers').textContent = total;
+                    document.getElementById('pendingUsers').textContent = pending;
+                    document.getElementById('approvedUsers').textContent = approved;
+                    document.getElementById('rejectedUsers').textContent = rejected;
+
+                } else {
+                    emptyState.style.display = 'block';
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                showMessage('Gagal memuat data dari Upstash Redis', 'error');
+            }
+        }
+
+        async function updateStatus(username, action) {
+            const endpoint = action === 'approve' ? '/api/approve' : '/api/reject';
+            try {
+                const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, adminName: 'Admin' })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`Berhasil ${action} user ${username}`, 'success');
+                    loadUsers();
+                } else {
+                    showMessage(data.message || 'Gagal mengubah status', 'error');
+                }
+            } catch (error) {
+                showMessage('Terjadi kesalahan koneksi', 'error');
+            }
+        }
+
+        async function deleteUser(username) {
+            if (!confirm(`Hapus user ${username}?`)) return;
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/users/${username}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`User ${username} berhasil dihapus`, 'success');
+                    loadUsers();
+                } else {
+                    showMessage('Gagal menghapus user', 'error');
+                }
+            } catch (error) {
+                showMessage('Terjadi kesalahan koneksi', 'error');
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
         function showMessage(text, type) {
@@ -531,10 +563,7 @@
             message.textContent = text;
             message.className = `message ${type}`;
             message.style.display = 'block';
-
-            setTimeout(() => {
-                message.style.display = 'none';
-            }, 3000);
+            setTimeout(() => { message.style.display = 'none'; }, 3000);
         }
     </script>
 </body>
